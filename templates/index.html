@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chatbot-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .chat-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e1e5e9;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-info {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .similarity-score {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .matched-question {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .question-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .question-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .send-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .examples {
+            margin-top: 15px;
+        }
+
+        .examples h4 {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .example-btn {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            color: #667eea;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 2px;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+        }
+
+        .welcome-message h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .welcome-message p {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+            .chatbot-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .message-content {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <div class="header">
+            <h1>🤖 FAQ Chatbot</h1>
+            <p>Ask me anything about our services</p>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <div class="welcome-message">
+                <h3>Welcome! 👋</h3>
+                <p>I'm here to help you with questions about our services. You can ask me about:</p>
+                <p>• Account management • Order tracking • Shipping • Returns • Payment methods</p>
+                <p>Try asking a question or click one of the examples below!</p>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            <p>Thinking...</p>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-container">
+                <input type="text" class="question-input" id="questionInput" placeholder="Ask your question here..." autocomplete="off">
+                <button class="send-btn" id="sendBtn" onclick="sendQuestion()">
+                    ➤
+                </button>
+            </div>
+            
+            <div class="examples">
+                <h4>Example Questions:</h4>
+                <div id="examplesContainer">
+                    <!-- Examples will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const questionInput = document.getElementById('questionInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const loading = document.getElementById('loading');
+        const examplesContainer = document.getElementById('examplesContainer');
+
+        // Load examples
+        fetch('/examples')
+            .then(response => response.json())
+            .then(data => {
+                data.examples.forEach(example => {
+                    const btn = document.createElement('button');
+                    btn.className = 'example-btn';
+                    btn.textContent = example;
+                    btn.onclick = () => {
+                        questionInput.value = example;
+                        sendQuestion();
+                    };
+                    examplesContainer.appendChild(btn);
+                });
+            });
+
+        function addMessage(content, isUser = false, metadata = {}) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+            
+            messageDiv.appendChild(messageContent);
+            
+            if (!isUser && metadata.similarity_score) {
+                const scoreDiv = document.createElement('div');
+                scoreDiv.className = 'similarity-score';
+                scoreDiv.textContent = `Similarity: ${metadata.similarity_score}`;
+                messageDiv.appendChild(scoreDiv);
+            }
+            
+            if (!isUser && metadata.matched_question) {
+                const matchDiv = document.createElement('div');
+                matchDiv.className = 'matched-question';
+                matchDiv.textContent = `Matched: ${metadata.matched_question}`;
+                messageDiv.appendChild(matchDiv);
+            }
+            
+            if (metadata.timestamp) {
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-info';
+                timeDiv.textContent = metadata.timestamp;
+                messageDiv.appendChild(timeDiv);
+            }
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function sendQuestion() {
+            const question = questionInput.value.trim();
+            if (!question) return;
+            
+            // Add user message
+            addMessage(question, true, { timestamp: new Date().toLocaleTimeString() });
+            
+            // Clear input and disable send button
+            questionInput.value = '';
+            sendBtn.disabled = true;
+            loading.classList.add('show');
+            
+            // Send request
+            fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: question })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.classList.remove('show');
+                sendBtn.disabled = false;
+                
+                if (data.success) {
+                    addMessage(data.answer, false, {
+                        similarity_score: data.similarity_score,
+                        matched_question: data.matched_question,
+                        timestamp: data.timestamp
+                    });
+                } else {
+                    addMessage(data.error, false, { timestamp: data.timestamp });
+                }
+            })
+            .catch(error => {
+                loading.classList.remove('show');
+                sendBtn.disabled = false;
+                addMessage('Sorry, something went wrong. Please try again.', false);
+            });
+        }
+
+        // Handle Enter key
+        questionInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendQuestion();
+            }
+        });
+
+        // Focus input on load
+        questionInput.focus();
+    </script>
+</body>
+</html>
